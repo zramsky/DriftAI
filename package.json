@@ -1,0 +1,19 @@
+{
+  "name": "contract-reconciliation-platform",
+  "version": "1.0.0",
+  "description": "Contract & Invoice Reconciliation Platform MVP",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace=backend",
+    "start": "npm run start:prod --workspace=backend",
+    "postinstall": "npm install --workspace=backend && npm install --workspace=frontend"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}
