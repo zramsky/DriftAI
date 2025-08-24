@@ -9,9 +9,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Input } from '@/components/ui/input'
 import { Upload, Search, Receipt, CheckCircle, XCircle, AlertTriangle, Clock } from 'lucide-react'
 import { apiClient, type Invoice } from '@/lib/api'
+import { InvoiceDetailModal } from '@/components/invoices/invoice-detail-modal'
 
 export default function InvoicesPage() {
   const [searchTerm, setSearchTerm] = useState('')
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const { data: invoices, isLoading, error } = useQuery({
     queryKey: ['invoices'],
@@ -44,6 +47,16 @@ export default function InvoicesPage() {
       default:
         return <Badge variant="secondary">{status}</Badge>
     }
+  }
+
+  const handleViewInvoice = (invoiceId: string) => {
+    setSelectedInvoiceId(invoiceId)
+    setIsModalOpen(true)
+  }
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false)
+    setSelectedInvoiceId(null)
   }
 
   const getStatusIcon = (status: Invoice['status']) => {
@@ -272,7 +285,11 @@ export default function InvoicesPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleViewInvoice(invoice.id)}
+                        >
                           View
                         </Button>
                         {invoice.status === 'flagged' && (
@@ -294,6 +311,13 @@ export default function InvoicesPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Invoice Detail Modal */}
+      <InvoiceDetailModal
+        invoiceId={selectedInvoiceId}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
     </div>
   )
 }

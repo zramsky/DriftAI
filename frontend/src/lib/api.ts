@@ -1,6 +1,8 @@
 import { type ClassValue, clsx } from "clsx"
+import { mockApiClient } from './mock-data'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const USE_MOCK_DATA = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true' || true; // Default to true for development
 
 export interface ApiResponse<T> {
   data?: T;
@@ -139,10 +141,16 @@ class ApiClient {
 
   // Vendor API
   async getVendors(): Promise<ApiResponse<Vendor[]>> {
+    if (USE_MOCK_DATA) {
+      return mockApiClient.getVendors();
+    }
     return this.request<Vendor[]>('/vendors');
   }
 
   async getVendor(id: string): Promise<ApiResponse<Vendor>> {
+    if (USE_MOCK_DATA) {
+      return mockApiClient.getVendor(id);
+    }
     return this.request<Vendor>(`/vendors/${id}`);
   }
 
@@ -178,6 +186,9 @@ class ApiClient {
 
   // Contract API
   async getContracts(vendorId?: string, status?: string): Promise<ApiResponse<Contract[]>> {
+    if (USE_MOCK_DATA) {
+      return mockApiClient.getContracts(vendorId);
+    }
     const params = new URLSearchParams();
     if (vendorId) params.append('vendorId', vendorId);
     if (status) params.append('status', status);
@@ -186,6 +197,9 @@ class ApiClient {
   }
 
   async getContract(id: string): Promise<ApiResponse<Contract>> {
+    if (USE_MOCK_DATA) {
+      return mockApiClient.getContract(id);
+    }
     return this.request<Contract>(`/contracts/${id}`);
   }
 
@@ -230,6 +244,9 @@ class ApiClient {
 
   // Invoice API
   async getInvoices(vendorId?: string, status?: string): Promise<ApiResponse<Invoice[]>> {
+    if (USE_MOCK_DATA) {
+      return mockApiClient.getInvoices(vendorId, status);
+    }
     const params = new URLSearchParams();
     if (vendorId) params.append('vendorId', vendorId);
     if (status) params.append('status', status);
@@ -238,6 +255,9 @@ class ApiClient {
   }
 
   async getInvoice(id: string): Promise<ApiResponse<Invoice>> {
+    if (USE_MOCK_DATA) {
+      return mockApiClient.getInvoice(id);
+    }
     return this.request<Invoice>(`/invoices/${id}`);
   }
 
@@ -274,16 +294,25 @@ class ApiClient {
   }
 
   async getReconciliationReport(invoiceId: string): Promise<ApiResponse<ReconciliationReport>> {
+    if (USE_MOCK_DATA) {
+      return mockApiClient.getReconciliationReport(invoiceId);
+    }
     return this.request<ReconciliationReport>(`/invoices/${invoiceId}/reconciliation`);
   }
 
   async approveInvoice(id: string): Promise<ApiResponse<Invoice>> {
+    if (USE_MOCK_DATA) {
+      return mockApiClient.approveInvoice(id);
+    }
     return this.request<Invoice>(`/invoices/${id}/approve`, {
       method: 'PATCH',
     });
   }
 
   async rejectInvoice(id: string, reason: string): Promise<ApiResponse<Invoice>> {
+    if (USE_MOCK_DATA) {
+      return mockApiClient.rejectInvoice(id, reason);
+    }
     return this.request<Invoice>(`/invoices/${id}/reject`, {
       method: 'PATCH',
       body: JSON.stringify({ reason }),
@@ -301,6 +330,9 @@ class ApiClient {
     totalDiscrepancies: number;
     totalSavings: number;
   }>> {
+    if (USE_MOCK_DATA) {
+      return mockApiClient.getInvoiceStats();
+    }
     const params = vendorId ? `?vendorId=${vendorId}` : '';
     return this.request(`/invoices/stats${params}`);
   }

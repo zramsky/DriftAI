@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import "./globals.css";
+import "./compiled.css";
 import { QueryProvider } from "@/lib/query-client";
 import { MainLayout } from "@/components/layout/main-layout";
 
