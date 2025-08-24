@@ -61,11 +61,11 @@
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-gray-300;
   }
   body {
-    @apply bg-background text-foreground;
-    font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+    @apply bg-white text-gray-900;
+    font-family: Inter, system-ui, -apple-system, sans-serif;
   }
   
   /* Monospace font for contract IDs and technical data */
