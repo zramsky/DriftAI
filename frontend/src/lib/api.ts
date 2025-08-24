@@ -2,7 +2,7 @@ import { type ClassValue, clsx } from "clsx"
 import { mockApiClient } from './mock-data'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const USE_MOCK_DATA = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true' || true; // Default to true for development
+const USE_MOCK_DATA = process.env.NEXT_PUBLIC_USE_MOCK_DATA !== 'false'; // Always use mock data unless explicitly set to false
 
 export interface ApiResponse<T> {
   data?: T;

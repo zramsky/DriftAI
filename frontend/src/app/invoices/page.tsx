@@ -1,20 +1,24 @@
 'use client'
 
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
-import { Upload, Search, Receipt, CheckCircle, XCircle, AlertTriangle, Clock } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Upload, Search, Receipt, CheckCircle, XCircle, AlertTriangle, Clock, Plus, Zap } from 'lucide-react'
 import { apiClient, type Invoice } from '@/lib/api'
 import { InvoiceDetailModal } from '@/components/invoices/invoice-detail-modal'
+import { InvoiceUpload } from '@/components/upload/invoice-upload'
 
 export default function InvoicesPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isUploadOpen, setIsUploadOpen] = useState(false)
+  const queryClient = useQueryClient()
 
   const { data: invoices, isLoading, error } = useQuery({
     queryKey: ['invoices'],
@@ -83,6 +87,21 @@ export default function InvoicesPage() {
     }).format(amount)
   }
 
+  const handleUploadComplete = (result: {
+    invoiceId: string
+    vendorId: string
+    fileName: string
+    reconciliationStatus: 'processing' | 'completed' | 'flagged'
+  }) => {
+    // Refresh invoices data
+    queryClient.invalidateQueries({ queryKey: ['invoices'] })
+    queryClient.invalidateQueries({ queryKey: ['vendors'] })
+    setIsUploadOpen(false)
+    
+    // Show success notification (could add toast here)
+    console.log('Invoice uploaded successfully:', result)
+  }
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -96,8 +115,8 @@ export default function InvoicesPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold tracking-tight">Invoices</h1>
-          <Button disabled>
-            <Upload className="mr-2 h-4 w-4" />
+          <Button onClick={() => setIsUploadOpen(true)}>
+            <Zap className="mr-2 h-4 w-4" />
             Upload Invoice
           </Button>
         </div>
@@ -111,8 +130,8 @@ export default function InvoicesPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold tracking-tight">Invoices</h1>
-          <Button disabled>
-            <Upload className="mr-2 h-4 w-4" />
+          <Button onClick={() => setIsUploadOpen(true)}>
+            <Zap className="mr-2 h-4 w-4" />
             Upload Invoice
           </Button>
         </div>
@@ -136,7 +155,7 @@ export default function InvoicesPage() {
             Process and reconcile vendor invoices against contracts
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setIsUploadOpen(true)}>
           <Upload className="mr-2 h-4 w-4" />
           Upload Invoice
         </Button>
@@ -318,6 +337,18 @@ export default function InvoicesPage() {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
       />
+
+      {/* Upload Dialog */}
+      <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Upload & Reconcile Invoice</DialogTitle>
+          </DialogHeader>
+          <div className="flex justify-center p-6">
+            <InvoiceUpload onUploadComplete={handleUploadComplete} />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -1,17 +1,21 @@
 'use client'
 
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
-import { Upload, Search, FileText, Calendar, AlertCircle } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Upload, Search, FileText, Calendar, AlertCircle, Plus } from 'lucide-react'
 import { apiClient, type Contract } from '@/lib/api'
+import { ContractUpload } from '@/components/upload/contract-upload'
 
 export default function ContractsPage() {
   const [searchTerm, setSearchTerm] = useState('')
+  const [isUploadOpen, setIsUploadOpen] = useState(false)
+  const queryClient = useQueryClient()
 
   const { data: contracts, isLoading, error } = useQuery({
     queryKey: ['contracts'],
@@ -50,6 +54,20 @@ export default function ContractsPage() {
       month: 'short',
       day: 'numeric'
     })
+  }
+
+  const handleUploadComplete = (result: {
+    vendorName: string
+    contractId: string
+    fileName: string
+  }) => {
+    // Refresh contracts data
+    queryClient.invalidateQueries({ queryKey: ['contracts'] })
+    queryClient.invalidateQueries({ queryKey: ['vendors'] })
+    setIsUploadOpen(false)
+    
+    // Show success notification (could add toast here)
+    console.log('Contract uploaded successfully:', result)
   }
 
   if (isLoading) {
@@ -97,8 +115,8 @@ export default function ContractsPage() {
             Manage vendor contracts and monitor their status
           </p>
         </div>
-        <Button>
-          <Upload className="mr-2 h-4 w-4" />
+        <Button onClick={() => setIsUploadOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />
           Upload Contract
         </Button>
       </div>
@@ -244,6 +262,18 @@ export default function ContractsPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Upload Dialog */}
+      <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Upload Contract</DialogTitle>
+          </DialogHeader>
+          <div className="flex justify-center p-6">
+            <ContractUpload onUploadComplete={handleUploadComplete} />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
