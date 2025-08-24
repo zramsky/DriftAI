@@ -87,16 +87,16 @@ export default function Dashboard() {
           <CardContent>
             <div className="space-y-4">
               <div className="flex items-center space-x-4">
-                <CheckCircle className="h-5 w-5 text-green-500" />
+                <CheckCircle className="h-5 w-5 text-success" />
                 <div className="flex-1 space-y-1">
-                  <p className="text-sm font-medium">Invoice INV-2024-001 reconciled</p>
+                  <p className="text-sm font-medium">Invoice <span className="font-mono text-xs bg-muted px-1 rounded">INV-2024-001</span> reconciled</p>
                   <p className="text-xs text-muted-foreground">MedSupply Co. - 2 minutes ago</p>
                 </div>
                 <Badge variant="success">Approved</Badge>
               </div>
               
               <div className="flex items-center space-x-4">
-                <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                <AlertTriangle className="h-5 w-5 text-warning" />
                 <div className="flex-1 space-y-1">
                   <p className="text-sm font-medium">Contract rate discrepancy detected</p>
                   <p className="text-xs text-muted-foreground">CleanCorp - 15 minutes ago</p>
@@ -105,18 +105,18 @@ export default function Dashboard() {
               </div>
               
               <div className="flex items-center space-x-4">
-                <FileText className="h-5 w-5 text-blue-500" />
+                <FileText className="h-5 w-5 text-info" />
                 <div className="flex-1 space-y-1">
-                  <p className="text-sm font-medium">New contract uploaded</p>
+                  <p className="text-sm font-medium">New contract <span className="font-mono text-xs bg-muted px-1 rounded">CON-2024-089</span> uploaded</p>
                   <p className="text-xs text-muted-foreground">FoodService Plus - 1 hour ago</p>
                 </div>
-                <Badge variant="secondary">Processing</Badge>
+                <Badge variant="info">Processing</Badge>
               </div>
               
               <div className="flex items-center space-x-4">
-                <XCircle className="h-5 w-5 text-red-500" />
+                <XCircle className="h-5 w-5 text-destructive" />
                 <div className="flex-1 space-y-1">
-                  <p className="text-sm font-medium">Invoice rejected</p>
+                  <p className="text-sm font-medium">Invoice <span className="font-mono text-xs bg-muted px-1 rounded">INV-2024-045</span> rejected</p>
                   <p className="text-xs text-muted-foreground">TechServices LLC - 2 hours ago</p>
                 </div>
                 <Badge variant="destructive">Rejected</Badge>
@@ -139,7 +139,7 @@ export default function Dashboard() {
                   <p className="text-xs text-muted-foreground">Medical Supplies</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-medium text-green-600">$8,245</p>
+                  <p className="text-sm font-medium text-success">$8,245</p>
                   <p className="text-xs text-muted-foreground">15 invoices</p>
                 </div>
               </div>
@@ -150,7 +150,7 @@ export default function Dashboard() {
                   <p className="text-xs text-muted-foreground">Cleaning Services</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-medium text-green-600">$5,123</p>
+                  <p className="text-sm font-medium text-success">$5,123</p>
                   <p className="text-xs text-muted-foreground">8 invoices</p>
                 </div>
               </div>
@@ -161,7 +161,7 @@ export default function Dashboard() {
                   <p className="text-xs text-muted-foreground">Food Vendor</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-medium text-green-600">$3,890</p>
+                  <p className="text-sm font-medium text-success">$3,890</p>
                   <p className="text-xs text-muted-foreground">22 invoices</p>
                 </div>
               </div>
@@ -172,7 +172,7 @@ export default function Dashboard() {
                   <p className="text-xs text-muted-foreground">IT Services</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-medium text-green-600">$2,456</p>
+                  <p className="text-sm font-medium text-success">$2,456</p>
                   <p className="text-xs text-muted-foreground">5 invoices</p>
                 </div>
               </div>
