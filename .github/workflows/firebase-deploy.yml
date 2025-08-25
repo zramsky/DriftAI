@@ -3,6 +3,7 @@ name: Deploy to Firebase Hosting
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
@@ -24,12 +25,9 @@ jobs:
           npm run build
           npx next export -o out
 
-      - name: Install Firebase CLI
-        run: npm i -g firebase-tools
-
-      - name: Deploy
+      - name: Deploy to Firebase Hosting
+        uses: w9jds/firebase-action@v13
+        with:
+          args: deploy --only hosting --project contractrecplatform
         env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        run: |
-          echo "$FIREBASE_SERVICE_ACCOUNT" > ${GITHUB_WORKSPACE}/sa.json
-          firebase deploy --only hosting --project contractrecplatform --token "$(cat ${GITHUB_WORKSPACE}/sa.json | jq -r .private_key_id  >/dev/null 2>&1 || echo)" || firebase deploy --only hosting --project contractrecplatform --non-interactive --force --json --token $FIREBASE_TOKEN
+          GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
