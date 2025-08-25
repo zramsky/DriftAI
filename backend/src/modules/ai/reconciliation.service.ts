@@ -69,7 +69,7 @@ export class ReconciliationService {
   private buildChecklist(contract: Contract): ReconciliationResult['checklist'] {
     const checklist: ReconciliationResult['checklist'] = [];
 
-    if (contract.terms?.rates?.length > 0) {
+    if ((contract.terms?.rates?.length ?? 0) > 0) {
       checklist.push({
         item: 'Rate Compliance',
         passed: false,
@@ -78,7 +78,7 @@ export class ReconciliationService {
       });
     }
 
-    if (contract.terms?.caps?.length > 0) {
+    if ((contract.terms?.caps?.length ?? 0) > 0) {
       checklist.push({
         item: 'Cap Limits',
         passed: false,

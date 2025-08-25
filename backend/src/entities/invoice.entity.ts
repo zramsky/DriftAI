@@ -78,6 +78,7 @@ export class Invoice {
     confidence?: number;
     aiModel?: string;
     processingTime?: number;
+    error?: string;
   };
 
   @OneToOne(() => ReconciliationReport, report => report.invoice)

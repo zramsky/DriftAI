@@ -2,7 +2,7 @@ import { Process, Processor } from '@nestjs/bull';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Job } from 'bull';
+import type { Job } from 'bull';
 import { Contract, ContractStatus } from '../../entities/contract.entity';
 import { StorageService } from '../storage/storage.service';
 import { PdfExtractionService } from '../storage/pdf-extraction.service';
@@ -64,8 +64,8 @@ export class ContractProcessor {
       const dates = this.contractExtractionService.calculateDates(contractData);
       
       contract.effectiveDate = dates.effectiveDate;
-      contract.renewalDate = dates.renewalDate;
-      contract.endDate = dates.endDate;
+      contract.renewalDate = dates.renewalDate ?? null as any;
+      contract.endDate = dates.endDate ?? null as any;
       contract.terms = contractData.terms;
       contract.extractedText = extractionResult.text;
       contract.metadata = {
@@ -97,7 +97,8 @@ export class ContractProcessor {
       await this.contractsRepository.update(contractId, {
         status: ContractStatus.NEEDS_REVIEW,
         metadata: {
-          error: error.message,
+          // store error message inside metadata if present
+          error: (error as Error)?.message,
           processingTime: Date.now() - job.timestamp,
         },
       });

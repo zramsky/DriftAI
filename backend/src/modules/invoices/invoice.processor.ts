@@ -2,7 +2,7 @@ import { Process, Processor } from '@nestjs/bull';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Job } from 'bull';
+import type { Job } from 'bull';
 import { Invoice, InvoiceStatus } from '../../entities/invoice.entity';
 import { ReconciliationReport } from '../../entities/reconciliation-report.entity';
 import { StorageService } from '../storage/storage.service';
@@ -63,12 +63,12 @@ export class InvoiceProcessor {
 
       invoice.invoiceNumber = invoiceData.invoiceNumber;
       invoice.invoiceDate = new Date(invoiceData.invoiceDate);
-      invoice.dueDate = invoiceData.dueDate ? new Date(invoiceData.dueDate) : null;
+      invoice.dueDate = invoiceData.dueDate ? new Date(invoiceData.dueDate) : null as any;
       invoice.totalAmount = invoiceData.totalAmount;
       invoice.subtotal = invoiceData.subtotal;
-      invoice.taxAmount = invoiceData.taxAmount;
+      invoice.taxAmount = invoiceData.taxAmount ?? 0 as any;
       invoice.lineItems = invoiceData.lineItems;
-      invoice.fees = invoiceData.fees;
+      invoice.fees = invoiceData.fees ?? [];
       invoice.extractedText = extractionResult.text;
       invoice.metadata = {
         extractionMethod: extractionResult.method,
@@ -133,7 +133,7 @@ export class InvoiceProcessor {
       await this.invoicesRepository.update(invoiceId, {
         status: InvoiceStatus.PENDING,
         metadata: {
-          error: error.message,
+          error: (error as Error)?.message,
           processingTime: Date.now() - job.timestamp,
         },
       });

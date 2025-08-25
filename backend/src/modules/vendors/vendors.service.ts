@@ -122,7 +122,7 @@ export class VendorsService {
       throw new NotFoundException(`Vendor with ID ${id} not found`);
     }
 
-    vendor.deletedAt = null;
+    vendor.deletedAt = null as any;
     vendor.active = true;
     const restoredVendor = await this.vendorsRepository.save(vendor);
 

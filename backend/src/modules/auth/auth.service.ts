@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { User } from '../../entities/user.entity';
+import { User, UserRole } from '../../entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
 
@@ -116,15 +116,15 @@ export class AuthService {
 
   async createDefaultAdmin(): Promise<void> {
     const adminExists = await this.usersRepository.findOne({
-      where: { role: 'admin' },
+      where: { role: UserRole.ADMIN },
     });
 
     if (!adminExists) {
-      const defaultAdmin = {
+      const defaultAdmin: CreateUserDto = {
         email: 'admin@contractflow.com',
         password: 'admin123',
         name: 'System Administrator',
-        role: 'admin' as const,
+        role: UserRole.ADMIN,
       };
 
       await this.register(defaultAdmin);
