@@ -1,0 +1,35 @@
+name: Deploy to Firebase Hosting
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build frontend
+        working-directory: frontend
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+        run: |
+          npm ci
+          npm run build
+          npx next export -o out
+
+      - name: Install Firebase CLI
+        run: npm i -g firebase-tools
+
+      - name: Deploy
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          echo "$FIREBASE_SERVICE_ACCOUNT" > ${GITHUB_WORKSPACE}/sa.json
+          firebase deploy --only hosting --project contractrecplatform --token "$(cat ${GITHUB_WORKSPACE}/sa.json | jq -r .private_key_id  >/dev/null 2>&1 || echo)" || firebase deploy --only hosting --project contractrecplatform --non-interactive --force --json --token $FIREBASE_TOKEN
