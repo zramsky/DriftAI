@@ -23,12 +23,11 @@ jobs:
         run: |
           npm ci
           npm run build
-          npx next export -o out
+          npx next export
 
-      - name: Deploy to Firebase Hosting (live)
-        uses: FirebaseExtended/action-hosting-deploy@v0
+      - name: Deploy to Firebase Hosting
+        uses: w9jds/firebase-action@v13
         with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          projectId: contractrecplatform
-          channelId: live
+          args: deploy --only hosting --project contractrecplatform
+        env:
+          GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
