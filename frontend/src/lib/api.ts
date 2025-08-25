@@ -1,6 +1,7 @@
 import { type ClassValue, clsx } from "clsx"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_PREFIX = '/api/v1';
 
 export interface ApiResponse<T> {
   data?: T;
@@ -108,7 +109,7 @@ class ApiClient {
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     try {
-      const url = `${this.baseURL}${endpoint}`;
+      const url = `${this.baseURL}${API_PREFIX}${endpoint}`;
       const response = await fetch(url, {
         headers: {
           'Content-Type': 'application/json',
@@ -193,7 +194,7 @@ class ApiClient {
     const formData = new FormData();
     formData.append('file', file);
 
-    const url = `${this.baseURL}/contracts/upload?vendorId=${vendorId}`;
+    const url = `${this.baseURL}${API_PREFIX}/contracts/upload?vendorId=${vendorId}`;
     
     try {
       const response = await fetch(url, {
@@ -245,7 +246,7 @@ class ApiClient {
     const formData = new FormData();
     formData.append('file', file);
 
-    const url = `${this.baseURL}/invoices/upload?vendorId=${vendorId}`;
+    const url = `${this.baseURL}${API_PREFIX}/invoices/upload?vendorId=${vendorId}`;
     
     try {
       const response = await fetch(url, {

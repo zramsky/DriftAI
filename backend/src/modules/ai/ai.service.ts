@@ -35,7 +35,8 @@ export class AiService {
         max_tokens: 4096,
       });
 
-      const result = JSON.parse(completion.choices[0].message.content);
+      const content = completion.choices[0].message.content ?? '{}';
+      const result = JSON.parse(content);
       
       const validate = this.ajv.compile(schema);
       const valid = validate(result);
@@ -87,7 +88,7 @@ export class AiService {
         max_tokens: 500,
       });
 
-      return completion.choices[0].message.content;
+      return completion.choices[0].message.content ?? '';
     } catch (error) {
       this.logger.error('Plain English generation failed:', error);
       throw error;

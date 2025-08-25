@@ -63,6 +63,7 @@ export class Contract {
     clauseSpans?: any[];
     aiModel?: string;
     processingTime?: number;
+    error?: string;
   };
 
   @Column({ name: 'deleted_at', nullable: true })

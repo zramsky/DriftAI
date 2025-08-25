@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { InjectQueue } from '@nestjs/bull';
 import { Repository, IsNull } from 'typeorm';
-import { Queue } from 'bull';
+import type { Queue } from 'bull';
 import { Contract, ContractStatus } from '../../entities/contract.entity';
 import { Vendor } from '../../entities/vendor.entity';
 import { AuditLog, AuditAction } from '../../entities/audit-log.entity';

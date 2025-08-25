@@ -18,14 +18,14 @@ export class StorageService {
   private bucketName: string;
 
   constructor(private configService: ConfigService) {
+    const region = this.configService.get<string>('AWS_REGION') ?? 'us-east-1';
+    const accessKeyId = this.configService.get<string>('AWS_ACCESS_KEY_ID') ?? '';
+    const secretAccessKey = this.configService.get<string>('AWS_SECRET_ACCESS_KEY') ?? '';
     this.s3Client = new S3Client({
-      region: this.configService.get('AWS_REGION'),
-      credentials: {
-        accessKeyId: this.configService.get('AWS_ACCESS_KEY_ID'),
-        secretAccessKey: this.configService.get('AWS_SECRET_ACCESS_KEY'),
-      },
+      region,
+      credentials: accessKeyId && secretAccessKey ? { accessKeyId, secretAccessKey } : undefined,
     });
-    this.bucketName = this.configService.get('AWS_S3_BUCKET');
+    this.bucketName = this.configService.get<string>('AWS_S3_BUCKET') ?? '';
   }
 
   async uploadFile(
