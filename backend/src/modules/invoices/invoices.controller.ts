@@ -73,6 +73,11 @@ export class InvoicesController {
     return this.invoicesService.findOne(id);
   }
 
+  @Get(':id/status')
+  getStatus(@Param('id') id: string) {
+    return this.invoicesService.getInvoiceStatus(id);
+  }
+
   @Get(':id/reconciliation')
   getReconciliationReport(@Param('id') id: string) {
     return this.invoicesService.getReconciliationReport(id);

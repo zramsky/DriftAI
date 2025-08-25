@@ -64,6 +64,11 @@ export class ContractsController {
     return this.contractsService.findOne(id);
   }
 
+  @Get(':id/status')
+  getStatus(@Param('id') id: string) {
+    return this.contractsService.getContractStatus(id);
+  }
+
   @Get(':id/terms')
   getTerms(@Param('id') id: string) {
     return this.contractsService.getContractTerms(id);

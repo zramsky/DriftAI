@@ -106,6 +106,43 @@ export class ContractsService {
     return contract;
   }
 
+  async getContractStatus(id: string): Promise<{
+    status: ContractStatus;
+    processingState: string;
+    lastUpdated: Date;
+    jobMetadata?: any;
+  }> {
+    const contract = await this.contractsRepository.findOne({
+      where: { id, deletedAt: IsNull() },
+    });
+
+    if (!contract) {
+      throw new NotFoundException(`Contract with ID ${id} not found`);
+    }
+
+    return {
+      status: contract.status,
+      processingState: this.getProcessingState(contract.status),
+      lastUpdated: contract.updatedAt,
+      jobMetadata: contract.metadata,
+    };
+  }
+
+  private getProcessingState(status: ContractStatus): string {
+    switch (status) {
+      case ContractStatus.NEEDS_REVIEW:
+        return 'processing';
+      case ContractStatus.ACTIVE:
+        return 'completed';
+      case ContractStatus.INACTIVE:
+        return 'inactive';
+      case ContractStatus.EXPIRED:
+        return 'expired';
+      default:
+        return 'unknown';
+    }
+  }
+
   async findActiveContractForVendor(vendorId: string): Promise<Contract | null> {
     return this.contractsRepository.findOne({
       where: {

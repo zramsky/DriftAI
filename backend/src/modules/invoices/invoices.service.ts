@@ -113,6 +113,45 @@ export class InvoicesService {
     return invoice;
   }
 
+  async getInvoiceStatus(id: string): Promise<{
+    status: InvoiceStatus;
+    processingState: string;
+    lastUpdated: Date;
+    jobMetadata?: any;
+  }> {
+    const invoice = await this.invoicesRepository.findOne({
+      where: { id, deletedAt: IsNull() },
+    });
+
+    if (!invoice) {
+      throw new NotFoundException(`Invoice with ID ${id} not found`);
+    }
+
+    return {
+      status: invoice.status,
+      processingState: this.getProcessingState(invoice.status),
+      lastUpdated: invoice.updatedAt,
+      jobMetadata: invoice.metadata,
+    };
+  }
+
+  private getProcessingState(status: InvoiceStatus): string {
+    switch (status) {
+      case InvoiceStatus.PENDING:
+        return 'processing';
+      case InvoiceStatus.RECONCILED:
+        return 'completed';
+      case InvoiceStatus.FLAGGED:
+        return 'flagged';
+      case InvoiceStatus.APPROVED:
+        return 'approved';
+      case InvoiceStatus.REJECTED:
+        return 'rejected';
+      default:
+        return 'unknown';
+    }
+  }
+
   async getReconciliationReport(invoiceId: string): Promise<ReconciliationReport> {
     const report = await this.reportsRepository.findOne({
       where: { invoiceId },
