@@ -229,6 +229,15 @@ class ApiClient {
     });
   }
 
+  async getContractStatus(id: string): Promise<ApiResponse<{
+    status: Contract['status'];
+    processingState: string;
+    lastUpdated: string;
+    jobMetadata?: any;
+  }>> {
+    return this.request(`/contracts/${id}/status`);
+  }
+
   // Invoice API
   async getInvoices(vendorId?: string, status?: string): Promise<ApiResponse<Invoice[]>> {
     const params = new URLSearchParams();
@@ -289,6 +298,15 @@ class ApiClient {
       method: 'PATCH',
       body: JSON.stringify({ reason }),
     });
+  }
+
+  async getInvoiceStatus(id: string): Promise<ApiResponse<{
+    status: Invoice['status'];
+    processingState: string;
+    lastUpdated: string;
+    jobMetadata?: any;
+  }>> {
+    return this.request(`/invoices/${id}/status`);
   }
 
   async getInvoiceStats(vendorId?: string): Promise<ApiResponse<{

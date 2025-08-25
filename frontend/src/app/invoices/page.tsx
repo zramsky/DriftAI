@@ -1,17 +1,30 @@
 'use client'
 
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Upload, Search, Receipt, CheckCircle, XCircle, AlertTriangle, Clock } from 'lucide-react'
-import { apiClient, type Invoice } from '@/lib/api'
+import { apiClient, type Invoice, type Vendor } from '@/lib/api'
+import { useToast } from '@/hooks/use-toast'
+import { useInvoicePolling } from '@/hooks/use-polling'
 
 export default function InvoicesPage() {
   const [searchTerm, setSearchTerm] = useState('')
+  const [isUploadOpen, setIsUploadOpen] = useState(false)
+  const [selectedVendorId, setSelectedVendorId] = useState('')
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [lastUploadedInvoiceId, setLastUploadedInvoiceId] = useState<string | null>(null)
+  const { toast } = useToast()
+  const queryClient = useQueryClient()
+  const { startPolling } = useInvoicePolling(lastUploadedInvoiceId)
 
   const { data: invoices, isLoading, error } = useQuery({
     queryKey: ['invoices'],
@@ -23,6 +36,89 @@ export default function InvoicesPage() {
       return response.data || []
     },
   })
+
+  const { data: vendors } = useQuery({
+    queryKey: ['vendors'],
+    queryFn: async () => {
+      const response = await apiClient.getVendors()
+      if (response.error) {
+        return []
+      }
+      return response.data || []
+    },
+  })
+
+  const uploadInvoiceMutation = useMutation({
+    mutationFn: ({ vendorId, file }: { vendorId: string; file: File }) => 
+      apiClient.uploadInvoice(vendorId, file),
+    onSuccess: (response) => {
+      if (response.error) {
+        toast({
+          title: 'Error',
+          description: response.error,
+          variant: 'destructive',
+        })
+      } else {
+        toast({
+          title: 'Success',
+          description: `Invoice uploaded successfully! Job ID: ${response.data?.jobId}`,
+        })
+        
+        // Start polling for the uploaded invoice
+        if (response.data?.invoiceId) {
+          setLastUploadedInvoiceId(response.data.invoiceId)
+          startPolling()
+        }
+        
+        queryClient.invalidateQueries({ queryKey: ['invoices'] })
+        resetUploadForm()
+      }
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error',
+        description: 'Failed to upload invoice. Please try again.',
+        variant: 'destructive',
+      })
+    },
+  })
+
+  const resetUploadForm = () => {
+    setIsUploadOpen(false)
+    setSelectedVendorId('')
+    setSelectedFile(null)
+  }
+
+  const handleUpload = () => {
+    if (!selectedVendorId) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please select a vendor.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    if (!selectedFile) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please select a file to upload.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    if (selectedFile.type !== 'application/pdf') {
+      toast({
+        title: 'Validation Error',
+        description: 'Only PDF files are allowed.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    uploadInvoiceMutation.mutate({ vendorId: selectedVendorId, file: selectedFile })
+  }
 
   const filteredInvoices = invoices?.filter(invoice =>
     invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -123,10 +219,67 @@ export default function InvoicesPage() {
             Process and reconcile vendor invoices against contracts
           </p>
         </div>
-        <Button>
-          <Upload className="mr-2 h-4 w-4" />
-          Upload Invoice
-        </Button>
+        <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Upload className="mr-2 h-4 w-4" />
+              Upload Invoice
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Upload Invoice</DialogTitle>
+              <DialogDescription>
+                Upload a PDF invoice for a specific vendor.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="vendor">Select Vendor *</Label>
+                <Select value={selectedVendorId} onValueChange={setSelectedVendorId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a vendor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vendors?.map((vendor: Vendor) => (
+                      <SelectItem key={vendor.id} value={vendor.id}>
+                        {vendor.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="file">Invoice File *</Label>
+                <Input
+                  id="file"
+                  type="file"
+                  accept=".pdf"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    setSelectedFile(file || null)
+                  }}
+                />
+                {selectedFile && (
+                  <p className="text-sm text-muted-foreground">
+                    Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                  </p>
+                )}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={resetUploadForm}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleUpload} 
+                disabled={uploadInvoiceMutation.isPending}
+              >
+                {uploadInvoiceMutation.isPending ? 'Uploading...' : 'Upload Invoice'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Summary Cards */}
@@ -272,8 +425,10 @@ export default function InvoicesPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
-                        <Button variant="outline" size="sm">
-                          View
+                        <Button variant="outline" size="sm" asChild>
+                          <Link href={`/invoices/${invoice.id}`}>
+                            View
+                          </Link>
                         </Button>
                         {invoice.status === 'flagged' && (
                           <>

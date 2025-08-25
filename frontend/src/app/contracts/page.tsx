@@ -1,17 +1,29 @@
 'use client'
 
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Upload, Search, FileText, Calendar, AlertCircle } from 'lucide-react'
-import { apiClient, type Contract } from '@/lib/api'
+import { apiClient, type Contract, type Vendor } from '@/lib/api'
+import { useToast } from '@/hooks/use-toast'
+import { useContractPolling } from '@/hooks/use-polling'
 
 export default function ContractsPage() {
   const [searchTerm, setSearchTerm] = useState('')
+  const [isUploadOpen, setIsUploadOpen] = useState(false)
+  const [selectedVendorId, setSelectedVendorId] = useState('')
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [lastUploadedContractId, setLastUploadedContractId] = useState<string | null>(null)
+  const { toast } = useToast()
+  const queryClient = useQueryClient()
+  const { startPolling } = useContractPolling(lastUploadedContractId)
 
   const { data: contracts, isLoading, error } = useQuery({
     queryKey: ['contracts'],
@@ -23,6 +35,89 @@ export default function ContractsPage() {
       return response.data || []
     },
   })
+
+  const { data: vendors } = useQuery({
+    queryKey: ['vendors'],
+    queryFn: async () => {
+      const response = await apiClient.getVendors()
+      if (response.error) {
+        return []
+      }
+      return response.data || []
+    },
+  })
+
+  const uploadContractMutation = useMutation({
+    mutationFn: ({ vendorId, file }: { vendorId: string; file: File }) => 
+      apiClient.uploadContract(vendorId, file),
+    onSuccess: (response) => {
+      if (response.error) {
+        toast({
+          title: 'Error',
+          description: response.error,
+          variant: 'destructive',
+        })
+      } else {
+        toast({
+          title: 'Success',
+          description: `Contract uploaded successfully! Job ID: ${response.data?.jobId}`,
+        })
+        
+        // Start polling for the uploaded contract
+        if (response.data?.contractId) {
+          setLastUploadedContractId(response.data.contractId)
+          startPolling()
+        }
+        
+        queryClient.invalidateQueries({ queryKey: ['contracts'] })
+        resetUploadForm()
+      }
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error',
+        description: 'Failed to upload contract. Please try again.',
+        variant: 'destructive',
+      })
+    },
+  })
+
+  const resetUploadForm = () => {
+    setIsUploadOpen(false)
+    setSelectedVendorId('')
+    setSelectedFile(null)
+  }
+
+  const handleUpload = () => {
+    if (!selectedVendorId) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please select a vendor.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    if (!selectedFile) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please select a file to upload.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    if (selectedFile.type !== 'application/pdf') {
+      toast({
+        title: 'Validation Error',
+        description: 'Only PDF files are allowed.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    uploadContractMutation.mutate({ vendorId: selectedVendorId, file: selectedFile })
+  }
 
   const filteredContracts = contracts?.filter(contract =>
     contract.fileName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -97,10 +192,67 @@ export default function ContractsPage() {
             Manage vendor contracts and monitor their status
           </p>
         </div>
-        <Button>
-          <Upload className="mr-2 h-4 w-4" />
-          Upload Contract
-        </Button>
+        <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Upload className="mr-2 h-4 w-4" />
+              Upload Contract
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Upload Contract</DialogTitle>
+              <DialogDescription>
+                Upload a PDF contract for a specific vendor.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="vendor">Select Vendor *</Label>
+                <Select value={selectedVendorId} onValueChange={setSelectedVendorId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a vendor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vendors?.map((vendor: Vendor) => (
+                      <SelectItem key={vendor.id} value={vendor.id}>
+                        {vendor.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="file">Contract File *</Label>
+                <Input
+                  id="file"
+                  type="file"
+                  accept=".pdf"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    setSelectedFile(file || null)
+                  }}
+                />
+                {selectedFile && (
+                  <p className="text-sm text-muted-foreground">
+                    Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                  </p>
+                )}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={resetUploadForm}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleUpload} 
+                disabled={uploadContractMutation.isPending}
+              >
+                {uploadContractMutation.isPending ? 'Uploading...' : 'Upload Contract'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Summary Cards */}

@@ -1,17 +1,29 @@
 'use client'
 
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog'
 import { Plus, Search, Building2, FileText, DollarSign } from 'lucide-react'
 import { apiClient, type Vendor } from '@/lib/api'
+import { useToast } from '@/hooks/use-toast'
 
 export default function VendorsPage() {
   const [searchTerm, setSearchTerm] = useState('')
+  const [isAddVendorOpen, setIsAddVendorOpen] = useState(false)
+  const [newVendor, setNewVendor] = useState({
+    name: '',
+    canonicalName: '',
+    businessDescription: '',
+    active: true,
+  })
+  const { toast } = useToast()
+  const queryClient = useQueryClient()
 
   const { data: vendors, isLoading, error } = useQuery({
     queryKey: ['vendors'],
@@ -23,6 +35,58 @@ export default function VendorsPage() {
       return response.data || []
     },
   })
+
+  const createVendorMutation = useMutation({
+    mutationFn: (vendor: typeof newVendor) => apiClient.createVendor(vendor),
+    onSuccess: (response) => {
+      if (response.error) {
+        toast({
+          title: 'Error',
+          description: response.error,
+          variant: 'destructive',
+        })
+      } else {
+        toast({
+          title: 'Success',
+          description: 'Vendor created successfully!',
+        })
+        queryClient.invalidateQueries({ queryKey: ['vendors'] })
+        setIsAddVendorOpen(false)
+        setNewVendor({
+          name: '',
+          canonicalName: '',
+          businessDescription: '',
+          active: true,
+        })
+      }
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error',
+        description: 'Failed to create vendor. Please try again.',
+        variant: 'destructive',
+      })
+    },
+  })
+
+  const handleCreateVendor = () => {
+    if (!newVendor.name.trim()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Vendor name is required.',
+        variant: 'destructive',
+      })
+      return
+    }
+    
+    // Auto-generate canonical name if not provided
+    const vendorToCreate = {
+      ...newVendor,
+      canonicalName: newVendor.canonicalName || newVendor.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+    }
+    
+    createVendorMutation.mutate(vendorToCreate)
+  }
 
   const filteredVendors = vendors?.filter(vendor =>
     vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -74,10 +138,62 @@ export default function VendorsPage() {
             Manage your vendor relationships and contracts
           </p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Vendor
-        </Button>
+        <Dialog open={isAddVendorOpen} onOpenChange={setIsAddVendorOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Vendor
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Add New Vendor</DialogTitle>
+              <DialogDescription>
+                Create a new vendor to manage contracts and invoices.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="name">Vendor Name *</Label>
+                <Input
+                  id="name"
+                  placeholder="Enter vendor name"
+                  value={newVendor.name}
+                  onChange={(e) => setNewVendor({ ...newVendor, name: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="canonicalName">Canonical Name</Label>
+                <Input
+                  id="canonicalName"
+                  placeholder="Auto-generated from name if empty"
+                  value={newVendor.canonicalName}
+                  onChange={(e) => setNewVendor({ ...newVendor, canonicalName: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="businessDescription">Business Description</Label>
+                <Input
+                  id="businessDescription"
+                  placeholder="Optional description of the business"
+                  value={newVendor.businessDescription}
+                  onChange={(e) => setNewVendor({ ...newVendor, businessDescription: e.target.value })}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsAddVendorOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleCreateVendor} 
+                disabled={createVendorMutation.isPending}
+              >
+                {createVendorMutation.isPending ? 'Creating...' : 'Create Vendor'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Summary Cards */}
